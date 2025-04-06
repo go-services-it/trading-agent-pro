@@ -14,7 +14,7 @@ def get_candles(symbol, timeframe='1H', limit=150):
     url = f"{BITGET_BASE_URL}/candles"
     params = {
         "symbol": symbol,
-        "period": timeframe.lower(),
+        "granularity": "1H",
         "limit": limit
     }
     print(f"[DEBUG] Requesting: {url} with params: {params}")
