@@ -19,6 +19,8 @@ def get_candles(symbol, timeframe='1H', limit=150):
     }
     print(f"Requesting: {url} with params: {params}")  # 🔥 STAMPA COSA CHIEDIAMO
     response = requests.get(url, params=params)
+        data = response.json()['data']
+        print("Received data:", data)
     if response.status_code == 200:
         data = response.json()['data']
         print("Received data:", data)
