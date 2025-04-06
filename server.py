@@ -19,9 +19,12 @@ def get_candles(symbol, timeframe='1H', limit=150):
     }
     print(f"Requesting: {url} with params: {params}")
     response = requests.get(url, params=params)
-    if response.status_code == 200:
+    
         data = response.json()['data']
         print(f"Response data: {data}")
+        
+    if response.status_code == 200:
+        
         df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['close'] = df['close'].astype(float)
         df['high'] = df['high'].astype(float)
