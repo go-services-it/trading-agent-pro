@@ -1,29 +1,94 @@
 
 from flask import Flask, request, jsonify
-import random
+import requests
+import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
+
+BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
+
+def get_candles(symbol, timeframe='1H', limit=150):
+    url = f"{BITGET_BASE_URL}/candles"
+    params = {
+        "symbol": symbol,
+        "period": timeframe.lower(),
+        "limit": limit
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()['data']
+        df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['close'] = df['close'].astype(float)
+        df['high'] = df['high'].astype(float)
+        df['low'] = df['low'].astype(float)
+        return df
+    else:
+        return None
+
+def calculate_indicators(df):
+    df['sma50'] = df['close'].rolling(window=50).mean()
+    df['sma200'] = df['close'].rolling(window=200).mean()
+    delta = df['close'].diff()
+    gain = np.where(delta > 0, delta, 0)
+    loss = np.where(delta < 0, -delta, 0)
+    avg_gain = pd.Series(gain).rolling(window=14).mean()
+    avg_loss = pd.Series(loss).rolling(window=14).mean()
+    rs = avg_gain / avg_loss
+    df['rsi'] = 100 - (100 / (1 + rs))
+    df['tr'] = np.maximum(df['high'] - df['low'], abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift()))
+    df['atr'] = df['tr'].rolling(window=14).mean()
+    return df
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
-    coin = data.get('coin')
+    symbol = data.get('coin', 'BTCUSDT')
     timeframe = data.get('timeframe', '1h')
     
-    # Simulazione risposta
-    response = {
-        "coin": coin,
-        "entry_price": round(random.uniform(100, 1000), 2),
-        "stop_loss": round(random.uniform(90, 99), 2),
-        "take_profit_1": round(random.uniform(110, 120), 2),
-        "take_profit_2": round(random.uniform(120, 130), 2),
-        "take_profit_3": round(random.uniform(130, 140), 2),
-        "trend": random.choice(["Uptrend", "Downtrend", "Neutral"]),
-        "rsi": round(random.uniform(30, 70), 2),
-        "trade_score": random.randint(60, 95),
-        "note": "Simulated analysis."
+    df = get_candles(symbol, timeframe)
+    if df is None or len(df) < 50:
+        return jsonify({"error": "Unable to fetch or insufficient data"}), 400
+    
+    df = calculate_indicators(df)
+    last = df.iloc[-1]
+    prev = df.iloc[-2]
+    
+    trend = "Uptrend" if last['sma50'] > last['sma200'] else "Downtrend" if last['sma50'] < last['sma200'] else "Neutral"
+    rsi = round(last['rsi'], 2)
+    atr = round(last['atr'], 2)
+    
+    entry = round(last['close'], 2)
+    stop_loss = round(entry - (atr * 2), 2)
+    take_profit_1 = round(entry + (atr * 2), 2)
+    take_profit_2 = round(entry + (atr * 3), 2)
+    take_profit_3 = round(entry + (atr * 4), 2)
+    
+    risk_reward = round((take_profit_1 - entry) / (entry - stop_loss), 2) if (entry - stop_loss) != 0 else 0
+    
+    score = 0
+    score += 25 if trend == "Uptrend" else 0
+    score += 25 if 40 <= rsi <= 60 else 15
+    score += 25 if risk_reward >= 2 else 15
+    score += 15 if atr < entry * 0.03 else 5
+    score += 10
+    
+    result = {
+        "coin": symbol,
+        "timeframe": timeframe,
+        "entry_price": entry,
+        "stop_loss": stop_loss,
+        "take_profit_1": take_profit_1,
+        "take_profit_2": take_profit_2,
+        "take_profit_3": take_profit_3,
+        "trend": trend,
+        "rsi": rsi,
+        "atr": atr,
+        "risk_reward_ratio": risk_reward,
+        "trade_score": score,
+        "note": "Trend {} - RSI {:.2f} - R/R {:.2f}".format(trend, rsi, risk_reward)
     }
-    return jsonify(response)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
