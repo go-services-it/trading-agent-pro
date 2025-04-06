@@ -1,9 +1,9 @@
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 import pandas as pd
 import numpy as np
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -13,22 +13,22 @@ BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
 def get_candles(symbol, timeframe='1H', limit=150):
     url = f"{BITGET_BASE_URL}/candles"
     params = {
-        "symbol": symbol + "_SPBL",
-        "period": timeframe.upper(),
+        "symbol": symbol,
+        "period": timeframe.lower(),
         "limit": limit
     }
-    print(f"Requesting: {url} with params: {params}")
+    print(f"[DEBUG] Requesting: {url} with params: {params}")
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()['data']
-        print(f"Response data: {data}")
+        print(f"[DEBUG] Response data: {data[:2]} ...")  # Mostra solo i primi 2
         df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['close'] = df['close'].astype(float)
         df['high'] = df['high'].astype(float)
         df['low'] = df['low'].astype(float)
         return df
     else:
-        print(f"Error status: {response.status_code}")
+        print(f"[ERROR] Failed fetching candles: {response.status_code}")
         return None
 
 @app.route('/')
@@ -38,17 +38,18 @@ def home():
 @app.route('/analyze', methods=['POST', 'OPTIONS'])
 def analyze():
     if request.method == 'OPTIONS':
-        # Risposta automatica per preflight requests
-        return jsonify({"message": "OK"}), 200
+        print("[DEBUG] OPTIONS request received")
+        return jsonify({"message": "CORS OK"}), 200
 
     try:
-        data = request.get_json(force=True)  # Forza la lettura del JSON
-        print("Received data:", data)
+        data = request.get_json(force=True)
+        print(f"[DEBUG] Received data: {data}")
     except Exception as e:
-        print("Error parsing JSON:", str(e))
+        print(f"[ERROR] Error parsing JSON: {str(e)}")
         return jsonify({"error": "Invalid JSON received"}), 400
 
     if not data:
+        print("[ERROR] No data received")
         return jsonify({"error": "No data received"}), 400
 
     symbol = data.get('symbol', 'BTCUSDT')
@@ -56,6 +57,7 @@ def analyze():
 
     df = get_candles(symbol, timeframe)
     if df is None or len(df) < 50:
+        print("[ERROR] Unable to fetch or insufficient data")
         return jsonify({"error": "Unable to fetch or insufficient data"}), 400
 
     df = calculate_indicators(df)
@@ -95,6 +97,7 @@ def analyze():
         "trade_score": score,
         "note": "Trend {} - RSI {:.2f} - R/R {:.2f}".format(trend, rsi, risk_reward)
     }
+    print(f"[DEBUG] Sending response: {result}")
     return jsonify(result)
 
 def calculate_indicators(df):
@@ -111,8 +114,7 @@ def calculate_indicators(df):
     df['atr'] = df['tr'].rolling(window=14).mean()
     return df
 
-import os
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
+    print(f"[DEBUG] Server starting on port {port}")
     app.run(host='0.0.0.0', port=port)
