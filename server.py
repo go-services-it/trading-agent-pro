@@ -10,10 +10,10 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # URL base per l'API v2 Market di Bitget
-# BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
-BITGET_BASE_URL = 'https://api.bitget.com/api/v2/mix/market'
+# BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market' Mercato Spot
+BITGET_BASE_URL = 'https://api.bitget.com/api/v2/mix/market' # Mercato Futures
 
-def get_candles(symbol='BTCUSDT', timeframe='1H', limit=150, productType='usdt-futures'): # Aumentato limite per SMA200
+def get_candles(symbol='BTCUSDT', granularity='1H', limit=150, productType='usdt-futures'): # Aumentato limite per SMA200
     """
     Recupera i dati delle candele dall'API Bitget v2.
     """
@@ -21,11 +21,11 @@ def get_candles(symbol='BTCUSDT', timeframe='1H', limit=150, productType='usdt-f
 
     # <<< VERIFICA QUI >>> Controlla la documentazione API Bitget v2 per i valori esatti di 'granularity'
     # Esempi comuni: '1min', '5min', '1H', '4H', '1D', '1W'
-    # Assicurati che il valore 'timeframe' passato a questa funzione sia uno di quelli accettati.
+    # Assicurati che il valore 'granularity' passato a questa funzione sia uno di quelli accettati.
     # Rimosso .lower() assumendo che l'API voglia formati come '1H'. Modifica se necessario.
     params = {
         "symbol": symbol,
-        "granularity": timeframe, # Il parametro si chiama 'granularity' nella v2
+        "granularity": granularity, # Il parametro si chiama 'granularity' nella v2
         "limit": limit,
         "productType" : productType
     }
@@ -50,7 +50,7 @@ def get_candles(symbol='BTCUSDT', timeframe='1H', limit=150, productType='usdt-f
                 return None
 
             if not data:
-                print(f"[WARN] Nessun dato candela restituito dall'API per {symbol} / {timeframe}")
+                print(f"[WARN] Nessun dato candela restituito dall'API per {symbol} / {granularity}")
                 # Restituisce un DataFrame vuoto per coerenza
                 return pd.DataFrame(columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
 
@@ -149,7 +149,7 @@ def home():
 @app.route('/analyze', methods=['POST', 'OPTIONS'])
 def analyze():
     """
-    Endpoint per ricevere simbolo/timeframe, ottenere dati, calcolare indicatori e restituire analisi.
+    Endpoint per ricevere simbolo/granularity, ottenere dati, calcolare indicatori e restituire analisi.
     """
     if request.method == 'OPTIONS':
         # Gestione richiesta pre-flight CORS
@@ -173,21 +173,21 @@ def analyze():
         print(f"[ERROR] Errore nel parsing del JSON in input: {str(e)}")
         return jsonify({"error": "Payload JSON non valido o mancante"}), 400
 
-    # Estrai simbolo e timeframe dal payload JSON, con valori di default
+    # Estrai simbolo e granularity dal payload JSON, con valori di default
     symbol = data.get('symbol', 'BTCUSDT') # <<< VERIFICA QUI: Assicurati che il formato sia corretto per l'API (es. BTCUSDT_SPBL?)
-    timeframe = data.get('timeframe', '1H') # <<< VERIFICA QUI: Assicurati che il formato sia corretto (es. '1H', '4h'?)
+    granularity = data.get('granularity', '1H') # <<< VERIFICA QUI: Assicurati che il formato sia corretto (es. '1H', '4h'?)
 
     # Ottieni i dati delle candele
-    df = get_candles(symbol, timeframe)
+    df = get_candles(symbol, granularity)
 
     # Controlla se abbiamo dati sufficienti DOPO averli ottenuti
     # Necessari almeno 200 periodi per SMA200 e ~14 per RSI/ATR senza NaN iniziali
     required_length = 200
     if df is None or len(df) < required_length:
-        print(f"[ERROR] Impossibile ottenere dati sufficienti ({len(df) if df is not None else 0} righe) da Bitget per {symbol}/{timeframe}. Richiesti almeno {required_length}.")
+        print(f"[ERROR] Impossibile ottenere dati sufficienti ({len(df) if df is not None else 0} righe) da Bitget per {symbol}/{granularity}. Richiesti almeno {required_length}.")
         error_msg = "Dati insufficienti o errore nel recupero dati da Bitget."
         if df is not None and len(df) > 0: # Se abbiamo alcuni dati, forse l'API ne ha restituiti pochi
-             error_msg = f"Dati insufficienti ({len(df)} righe) per l'analisi. Controlla simbolo/timeframe o prova più tardi."
+             error_msg = f"Dati insufficienti ({len(df)} righe) per l'analisi. Controlla simbolo/granularity o prova più tardi."
 
         return jsonify({"error": error_msg}), 400 # Usiamo 400 Bad Request o 503 Service Unavailable? 400 è ok se input forse errato.
 
@@ -253,7 +253,7 @@ def analyze():
 
     result = {
         "symbol": symbol,
-        "timeframe": timeframe,
+        "granularity": granularity,
         "entry_price": entry,
         "stop_loss": stop_loss,
         "take_profit_1": take_profit_1,
