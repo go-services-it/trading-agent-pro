@@ -1,10 +1,12 @@
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 import pandas as pd
 import numpy as np
 
 app = Flask(__name__)
+CORS(app)
 
 BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
 
@@ -52,7 +54,6 @@ def analyze():
     
     df = calculate_indicators(df)
     last = df.iloc[-1]
-    prev = df.iloc[-2]
     
     trend = "Uptrend" if last['sma50'] > last['sma200'] else "Downtrend" if last['sma50'] < last['sma200'] else "Neutral"
     rsi = round(last['rsi'], 2)
