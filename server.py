@@ -19,12 +19,9 @@ def get_candles(symbol, timeframe='1H', limit=150):
     }
     print(f"Requesting: {url} with params: {params}")
     response = requests.get(url, params=params)
-    
+    if response.status_code == 200:
         data = response.json()['data']
         print(f"Response data: {data}")
-        
-    if response.status_code == 200:
-        
         df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['close'] = df['close'].astype(float)
         df['high'] = df['high'].astype(float)
@@ -42,7 +39,7 @@ def analyze():
     if not data:
         return jsonify({"error": "No data received"}), 400
 
-    symbol = data.get('coin', 'BTCUSDT')
+    symbol = data.get('symbol', 'BTCUSDT')
     timeframe = data.get('timeframe', '1h')
 
     df = get_candles(symbol, timeframe)
@@ -72,7 +69,7 @@ def analyze():
     score += 10
     
     result = {
-        "coin": symbol,
+        "symbol": symbol,
         "timeframe": timeframe,
         "entry_price": entry,
         "stop_loss": stop_loss,
