@@ -13,10 +13,10 @@ BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
 def get_candles(symbol, timeframe='1H', limit=150):
     url = f"{BITGET_BASE_URL}/candles"
     params = {
-        "symbol": symbol,
-        "period": timeframe.lower(),
-        "limit": limit
-    }
+    "symbol": symbol + "_SPBL",   # Aggiungiamo _SPBL automaticamente
+    "period": timeframe.upper(),  # Bitget vuole H maiuscola
+    "limit": limit
+}
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()['data']
