@@ -20,8 +20,8 @@ def get_candles(symbol, timeframe='1H', limit=150):
     print(f"Requesting: {url} with params: {params}")  # 🔥 STAMPA COSA CHIEDIAMO
     response = requests.get(url, params=params)
     if response.status_code == 200:
-        print("Received data:", data)
         data = response.json()['data']
+        print("Received data:", data)
         print(f"Response data: {data}")  # 🔥 STAMPA COSA ARRIVA
         df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['close'] = df['close'].astype(float)
