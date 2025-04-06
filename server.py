@@ -13,20 +13,24 @@ BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
 def get_candles(symbol, timeframe='1H', limit=150):
     url = f"{BITGET_BASE_URL}/candles"
     params = {
-    "symbol": symbol + "_SPBL",   # Aggiungiamo _SPBL automaticamente
-    "period": timeframe.upper(),  # Bitget vuole H maiuscola
-    "limit": limit
-}
+        "symbol": symbol + "_SPBL",
+        "period": timeframe.upper(),
+        "limit": limit
+    }
+    print(f"Requesting: {url} with params: {params}")  # 🔥 STAMPA COSA CHIEDIAMO
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()['data']
+        print(f"Response data: {data}")  # 🔥 STAMPA COSA ARRIVA
         df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['close'] = df['close'].astype(float)
         df['high'] = df['high'].astype(float)
         df['low'] = df['low'].astype(float)
         return df
     else:
+        print(f"Error status: {response.status_code}")  # 🔥 STAMPA ERRORE HTTP
         return None
+
 
 def calculate_indicators(df):
     df['sma50'] = df['close'].rolling(window=50).mean()
