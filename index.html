@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trading Agent Pro - Dashboard</title>
+</head>
+<body>
+    <h1>Trading Agent Pro</h1>
+    <button onclick="analyze()">Analizza BTC 1H</button>
+    <pre id="result"></pre>
+
+    <script>
+    async function analyze() {
+        const response = await fetch('https://trading-agent-pro.onrender.com/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "symbol": "BTCUSDT",
+                "timeframe": "1h"
+            })
+        });
+        const data = await response.json();
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+    </script>
+</body>
+</html>
