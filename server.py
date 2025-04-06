@@ -10,8 +10,8 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # URL base per l'API v2 Market di Bitget
-# BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
-BITGET_BASE_URL = 'https://api.bitget.com/api/v2/mix/market'
+BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
+# BITGET_BASE_URL = 'https://api.bitget.com/api/v2/mix/market'
 
 def get_candles(symbol='BTCUSDT', timeframe='1H', limit=150, productType='usdt-futures'): # Aumentato limite per SMA200
     """
@@ -27,7 +27,7 @@ def get_candles(symbol='BTCUSDT', timeframe='1H', limit=150, productType='usdt-f
         "symbol": symbol,
         "granularity": timeframe, # Il parametro si chiama 'granularity' nella v2
         "limit": limit
-        "productType" : productType
+        # "productType" : productType
     }
     print(f"[DEBUG] Requesting URL: {url}")
     print(f"[DEBUG] Requesting Params: {params}")
