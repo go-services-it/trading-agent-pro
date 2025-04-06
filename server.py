@@ -12,7 +12,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # URL base per l'API v2 Market di Bitget
 BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
 
-def get_candles(symbol, timeframe='1H', limit=220): # Aumentato limite per SMA200
+def get_candles(symbol='BTCUSDT', timeframe='1H', limit=220): # Aumentato limite per SMA200
     """
     Recupera i dati delle candele dall'API Bitget v2.
     """
