@@ -17,48 +17,35 @@ def get_candles(symbol, timeframe='1H', limit=150):
         "period": timeframe.upper(),
         "limit": limit
     }
-    print(f"Requesting: {url} with params: {params}")  # 🔥 STAMPA COSA CHIEDIAMO
+    print(f"Requesting: {url} with params: {params}")
     response = requests.get(url, params=params)
-        data = response.json()['data']
-        print("Received data:", data)
     if response.status_code == 200:
         data = response.json()['data']
-        print("Received data:", data)
-        print(f"Response data: {data}")  # 🔥 STAMPA COSA ARRIVA
+        print(f"Response data: {data}")
         df = pd.DataFrame(data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['close'] = df['close'].astype(float)
         df['high'] = df['high'].astype(float)
         df['low'] = df['low'].astype(float)
         return df
     else:
-        print(f"Error status: {response.status_code}")  # 🔥 STAMPA ERRORE HTTP
+        print(f"Error status: {response.status_code}")
         return None
-
-
-def calculate_indicators(df):
-    df['sma50'] = df['close'].rolling(window=50).mean()
-    df['sma200'] = df['close'].rolling(window=200).mean()
-    delta = df['close'].diff()
-    gain = np.where(delta > 0, delta, 0)
-    loss = np.where(delta < 0, -delta, 0)
-    avg_gain = pd.Series(gain).rolling(window=14).mean()
-    avg_loss = pd.Series(loss).rolling(window=14).mean()
-    rs = avg_gain / avg_loss
-    df['rsi'] = 100 - (100 / (1 + rs))
-    df['tr'] = np.maximum(df['high'] - df['low'], abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift()))
-    df['atr'] = df['tr'].rolling(window=14).mean()
-    return df
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
+    print("Received data:", data)
+
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+
     symbol = data.get('coin', 'BTCUSDT')
     timeframe = data.get('timeframe', '1h')
-    
+
     df = get_candles(symbol, timeframe)
     if df is None or len(df) < 50:
         return jsonify({"error": "Unable to fetch or insufficient data"}), 400
-    
+
     df = calculate_indicators(df)
     last = df.iloc[-1]
     
@@ -97,6 +84,20 @@ def analyze():
         "note": "Trend {} - RSI {:.2f} - R/R {:.2f}".format(trend, rsi, risk_reward)
     }
     return jsonify(result)
+
+def calculate_indicators(df):
+    df['sma50'] = df['close'].rolling(window=50).mean()
+    df['sma200'] = df['close'].rolling(window=200).mean()
+    delta = df['close'].diff()
+    gain = np.where(delta > 0, delta, 0)
+    loss = np.where(delta < 0, -delta, 0)
+    avg_gain = pd.Series(gain).rolling(window=14).mean()
+    avg_loss = pd.Series(loss).rolling(window=14).mean()
+    rs = avg_gain / avg_loss
+    df['rsi'] = 100 - (100 / (1 + rs))
+    df['tr'] = np.maximum(df['high'] - df['low'], abs(df['high'] - df['close'].shift()), abs(df['low'] - df['close'].shift()))
+    df['atr'] = df['tr'].rolling(window=14).mean()
+    return df
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
