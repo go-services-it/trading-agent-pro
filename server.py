@@ -1,12 +1,12 @@
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 import pandas as pd
 import numpy as np
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market'
 
@@ -31,10 +31,22 @@ def get_candles(symbol, timeframe='1H', limit=150):
         print(f"Error status: {response.status_code}")
         return None
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/')
+def home():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/analyze', methods=['POST', 'OPTIONS'])
 def analyze():
-    data = request.get_json()
-    print("Received data:", data)
+    if request.method == 'OPTIONS':
+        # Risposta automatica per preflight requests
+        return jsonify({"message": "OK"}), 200
+
+    try:
+        data = request.get_json(force=True)  # Forza la lettura del JSON
+        print("Received data:", data)
+    except Exception as e:
+        print("Error parsing JSON:", str(e))
+        return jsonify({"error": "Invalid JSON received"}), 400
 
     if not data:
         return jsonify({"error": "No data received"}), 400
