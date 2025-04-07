@@ -12,8 +12,9 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # URL base per l'API v2 Market di Bitget
 # BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market' Mercato Spot
 BITGET_BASE_URL = 'https://api.bitget.com/api/v2/mix/market' # Mercato Futures
+#, productType='USDT-FUTURES'
 
-def get_candles(symbol='BTCUSDT', granularity='1H', limit=150, productType='USDT-FUTURES'): # Aumentato limite per SMA200
+def get_candles(symbol='BTCUSDT', granularity='1H', limit=220): # Aumentato limite per SMA200
     """
     Recupera i dati delle candele dall'API Bitget v2.
     """
