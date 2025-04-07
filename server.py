@@ -185,7 +185,7 @@ def analyze():
     required_length = 200
     if df is None or len(df) < required_length:
         print(f"[ERROR] Impossibile ottenere dati sufficienti ({len(df) if df is not None else 0} righe) da Bitget per {symbol}/{granularity}. Richiesti almeno {required_length}.")
-        error_msg = "Dati insufficienti o errore nel recupero dati da Bitget. Richiesti almeno" & {required_length}
+        error_msg = "Dati insufficienti o errore nel recupero dati da Bitget."
         if df is not None and len(df) > 0: # Se abbiamo alcuni dati, forse l'API ne ha restituiti pochi
              error_msg = f"Dati insufficienti ({len(df)} righe) per l'analisi. Controlla simbolo/granularity o prova più tardi."
 
