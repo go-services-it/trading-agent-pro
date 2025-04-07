@@ -27,14 +27,14 @@ def sign_request(timestamp, method, request_path, body, secret):
 
 def convert_granularity(granularity):
     mapping = {
-        "1h": "H1",
-        "4h": "H4",
-        "1d": "D1",
-        "1w": "W1"
+        "1h": "1H",
+        "4h": "4H",
+        "1d": "1D",
+        "1w": "1W"
     }
     return mapping.get(granularity.lower(), granularity)
 
-def get_candles(symbol='BTCUSDT', granularity='H1', limit=220):
+def get_candles(symbol='BTCUSDT', granularity='1H', limit=220):
     url_path = f"/api/v2/mix/market/candles"
     full_url = f"{BITGET_BASE_URL}/candles"
 
