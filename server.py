@@ -32,7 +32,8 @@ def get_candles(symbol='BTCUSDT', granularity='1H', limit=220):
     params = {
         "symbol": symbol,
         "granularity": granularity,
-        "limit": limit
+        "limit": limit,
+        "productType": "usdt-futures"
     }
 
     timestamp = str(int(time.time() * 1000))
