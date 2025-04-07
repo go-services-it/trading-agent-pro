@@ -25,10 +25,19 @@ def sign_request(timestamp, method, request_path, body, secret):
     mac = hmac.new(secret.encode('utf-8'), message.encode('utf-8'), digestmod=hashlib.sha256)
     return base64.b64encode(mac.digest()).decode()
 
-def get_candles(symbol='BTCUSDT', granularity='1H', limit=220):
+def convert_granularity(granularity):
+    mapping = {
+        "1h": "H1",
+        "4h": "H4",
+        "1d": "D1",
+        "1w": "W1"
+    }
+    return mapping.get(granularity.lower(), granularity)
+
+def get_candles(symbol='BTCUSDT', granularity='H1', limit=220):
     url_path = f"/api/v2/mix/market/candles"
     full_url = f"{BITGET_BASE_URL}/candles"
-    
+
     params = {
         "symbol": symbol,
         "granularity": granularity,
@@ -40,7 +49,7 @@ def get_candles(symbol='BTCUSDT', granularity='1H', limit=220):
     method = "GET"
     body = ""
 
-    query_string = f"symbol={symbol}&granularity={granularity}&limit={limit}"
+    query_string = f"symbol={symbol}&granularity={granularity}&limit={limit}&productType=usdt-futures"
     request_path_with_params = f"{url_path}?{query_string}"
 
     signature = sign_request(timestamp, method, request_path_with_params, body, API_SECRET)
@@ -138,7 +147,7 @@ def analyze():
         return jsonify({"error": "Payload JSON non valido o mancante"}), 400
 
     symbol = data.get('symbol', 'BTCUSDT')
-    granularity = data.get('granularity', '1H')
+    granularity = convert_granularity(data.get('granularity', 'H1'))
 
     df = get_candles(symbol, granularity)
     if df is None or len(df) < 200:
