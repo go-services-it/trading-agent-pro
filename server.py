@@ -27,8 +27,9 @@ def get_candles(symbol='BTCUSDT', granularity='1H', limit=220): # Aumentato limi
     params = {
         "symbol": symbol,
         "granularity": granularity, # Il parametro si chiama 'granularity' nella v2
-        "limit": limit,
-        "productType" : productType
+        "limit": limit
+        #,
+        #"productType" : productType
     }
     print(f"[DEBUG] Requesting URL: {url}")
     print(f"[DEBUG] Requesting Params: {params}")
