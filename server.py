@@ -13,7 +13,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # BITGET_BASE_URL = 'https://api.bitget.com/api/v2/market' Mercato Spot
 BITGET_BASE_URL = 'https://api.bitget.com/api/v2/mix/market' # Mercato Futures
 
-def get_candles(symbol='BTCUSDT', granularity='1H', limit=150, productType='usdt-futures'): # Aumentato limite per SMA200
+def get_candles(symbol='BTCUSDT', granularity='1H', limit=150, productType='USDT-FUTURES'): # Aumentato limite per SMA200
     """
     Recupera i dati delle candele dall'API Bitget v2.
     """
@@ -185,7 +185,7 @@ def analyze():
     required_length = 200
     if df is None or len(df) < required_length:
         print(f"[ERROR] Impossibile ottenere dati sufficienti ({len(df) if df is not None else 0} righe) da Bitget per {symbol}/{granularity}. Richiesti almeno {required_length}.")
-        error_msg = "Dati insufficienti o errore nel recupero dati da Bitget."
+        error_msg = "Dati insufficienti o errore nel recupero dati da Bitget. Richiesti almeno" & {required_length}
         if df is not None and len(df) > 0: # Se abbiamo alcuni dati, forse l'API ne ha restituiti pochi
              error_msg = f"Dati insufficienti ({len(df)} righe) per l'analisi. Controlla simbolo/granularity o prova più tardi."
 
